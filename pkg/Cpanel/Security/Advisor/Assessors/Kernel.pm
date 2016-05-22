@@ -137,7 +137,7 @@ sub kernel_updates {
         $release = ( split( /:/, $yum_response[$element] ) )[1] if ( ( $yum_response[$element] =~ m/^Release/ ) );
         if ( ( ($rpm) && ($arch) && ($version) && ($release) ) ) {
             s/\s//g foreach ( $rpm, $arch, $version, $release );
-            if ( $kc_kernelversion ne ( $version . "-" . $release . "." . $arch ) ) {
+            if ( $kc_kernelversion ne ( $version . "-" . $release . "." . $arch ) && $kc_kernelversion ne ( $version . "-" . $release ) ) {
                 $kernel_update{ $rpm . " " . $version . "-" . $release } = $version . "-" . $release . "." . $arch;
                 $rpm                                                     = undef;
                 $arch                                                    = undef;
