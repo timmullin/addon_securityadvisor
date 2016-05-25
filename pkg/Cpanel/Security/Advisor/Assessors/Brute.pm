@@ -28,6 +28,8 @@ package Cpanel::Security::Advisor::Assessors::Brute;
 
 use strict;
 use Cpanel::Config::Hulk ();
+use Cpanel::PsParser     ();
+use Cpanel::LoadFile     ();
 use base 'Cpanel::Security::Advisor::Assessors';
 
 sub generate_advice {
@@ -54,13 +56,64 @@ sub _check_for_brute_force_protection {
 
     }
     elsif ( -e "/etc/csf" ) {
-        $security_advisor_obj->add_advice(
-            {
-                'type' => $Cpanel::Security::Advisor::ADVISE_GOOD,
-                'text' => ['CSF is installed'],
+        if ( -e "/etc/csf/csf.disable" ) {
+            if ( -e "/usr/local/cpanel/whostmgr/docroot/cgi/configserver/csf" ) {
+                $security_advisor_obj->add_advice(
+                    {
+                        'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
+                        'text'       => ['CSF is installed, but appears to be disabled.'],
+                        'suggestion' => [
+                            'Click “Firewall Enable“ in the “[output,url,_1,ConfigServer Security & Firewall,_2,_3]” area. Alternately, run “csf -e“ from the command line.',
+                            $self->base_path('cgi/configserver/csf.cgi'),
+                            'target',
+                            '_blank'
+                        ],
+                    }
+                );
             }
-        );
-
+            else {
+                $security_advisor_obj->add_advice(
+                    {
+                        'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
+                        'text'       => ['CSF is installed, but appears to be disabled.'],
+                        'suggestion' => ['Run “csf -e“ from the command line.'],
+                    }
+                );
+            }
+        }
+        elsif ( check_lfd_running() ) {
+            $security_advisor_obj->add_advice(
+                {
+                    'type' => $Cpanel::Security::Advisor::ADVISE_GOOD,
+                    'text' => ['CSF is installed, and LFD is running.'],
+                }
+            );
+        }
+        else {
+            if ( -e "/usr/local/cpanel/whostmgr/docroot/cgi/configserver/csf" ) {
+                $security_advisor_obj->add_advice(
+                    {
+                        'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
+                        'text'       => ['CSF is installed, but LFD is not running.'],
+                        'suggestion' => [
+                            'Click “lfd Restart“ in the “[output,url,_1,ConfigServer Security & Firewall,_2,_3]” area. Alternately, run “csf --lfd restart“ from the command line.',
+                            $self->base_path('cgi/configserver/csf.cgi'),
+                            'target',
+                            '_blank'
+                        ],
+                    }
+                );
+            }
+            else {
+                $security_advisor_obj->add_advice(
+                    {
+                        'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
+                        'text'       => ['CSF is installed, but LFD is not running.'],
+                        'suggestion' => ['Run “csf --lfd restart“ from the command line.'],
+                    }
+                );
+            }
+        }
     }
     else {
         $security_advisor_obj->add_advice(
@@ -79,6 +132,18 @@ sub _check_for_brute_force_protection {
     }
 
     return 1;
+}
+
+sub check_lfd_running {
+    my $v_pid = Cpanel::LoadFile::load_if_exists("/var/run/lfd.pid");
+    if ( $v_pid && $v_pid =~ m/^[0-9]+$/ ) {
+        chomp($v_pid);
+        my $parsed_ps = Cpanel::PsParser::fast_parse_ps( 'want_pid' => $v_pid );
+        if ( $parsed_ps && $parsed_ps->[0]->{'command'} =~ m{^lfd\b} ) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 1;
