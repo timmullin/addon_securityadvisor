@@ -130,11 +130,17 @@ sub _internal_message {
 sub add_advice {
     my ( $self, $advice ) = @_;
 
-    my $caller = ( caller(1) )[3];
-    $caller =~ /(.+)::([^:]+)$/;
-
-    my $module   = $1;
-    my $function = $2;
+    # Some assessor modules call methods directly on instances of this class,
+    # and some use wrapper methods, so try to figure out the module name
+    # regardless of which path we took.
+    my ( $module, $function );
+    foreach my $level ( 1, 3 ) {
+        my $caller = ( caller($level) )[3];
+        if ( $caller =~ /(Cpanel::Security::Advisor::Assessors::.+)::([^:]+)$/ ) {
+            ( $module, $function ) = ( $1, $2 );
+            last;
+        }
+    }
 
     $self->expand_advice_maketext($advice);
     $self->{'comet'}->add_message(
