@@ -33,6 +33,7 @@ use Cpanel::IP::Parse               ();
 use Cpanel::MysqlUtils              ();
 use Cpanel::MysqlUtils::MyCnf::Full ();
 use Cpanel::SafeRun::Errors         ();
+use Cpanel::LoadFile                ();
 eval { local $SIG{__DIE__}; require Cpanel::MysqlUtils::Connect; };
 
 use base 'Cpanel::Security::Advisor::Assessors';
@@ -159,29 +160,66 @@ sub _check_for_public_bind_address {
         if ( Cpanel::IP::Loopback::is_loopback($bind_address) ) {
             $self->add_good_advice( text => "MySQL is listening only on a local address." );
         }
-        elsif ( ( ( $version == 4 ) && @deny_rules && ( ( $bind_address =~ /ffff/i ) ? @deny_rules_6 : 1 ) ) || ( ( $version == 6 ) && @deny_rules_6 ) ) {
+        elsif ( ( ( $version == 4 ) && @deny_rules && ( ( $bind_address =~ /ffff/i ) ? @deny_rules_6 : 1 ) ) || ( ( $version == 6 ) && @deny_rules_6 ) || ( csf_port_closed($port) ) ) {
             $self->add_good_advice( text => "The MySQL port is blocked by the firewall, effectively allowing only local connections." );
         }
         else {
             $self->add_bad_advice(
                 text       => "The MySQL service is currently configured to listen on a public address: (bind-address=$bind_address)",
-                suggestion => 'Configure bind-address=127.0.0.1 in /etc/my.cnf',
+                suggestion => [
+                    'Configure bind-address=127.0.0.1 in /etc/my.cnf, or close port [_1] in the server’s firewall.',
+                    $port
+                ],
             );
         }
     }
     else {
-        if ( @deny_rules && @deny_rules_6 ) {
+        if ( ( @deny_rules && @deny_rules_6 ) || ( csf_port_closed($port) ) ) {
             $self->add_good_advice( text => "The MySQL port is blocked by the firewall, effectively allowing only local connections." );
         }
         else {
             $self->add_bad_advice(
                 text       => 'The MySQL service is currently configured to listen on all interfaces: (bind-address=*)',
-                suggestion => 'Configure bind-address=127.0.0.1 in /etc/my.cnf',
+                suggestion => [
+                    'Configure bind-address=127.0.0.1 in /etc/my.cnf, or close port [_1] in the server’s firewall.',
+                    $port
+                ],
             );
         }
     }
 
     return 1;
+}
+
+sub config_key_contains_port {
+    my ( $file, $key, $port ) = @_;
+
+    my $csf_conf = Cpanel::LoadFile::load_if_exists($file);
+    return if !$csf_conf;
+
+    foreach my $line ( split m/\n/, $csf_conf ) {
+        if ( $line =~ m/^\s*\Q$key\E\s*=\s*(['"])([^'"]*)\1/a ) {
+            my $port_list = $2;
+            foreach my $entry ( split m/,/, $port_list ) {
+                my ( $first, $last ) = split m/:/, $entry;
+                if ($last) {
+                    return 1 if $first <= $port && $port <= $last;
+                }
+                else {
+                    return 1 if $port == $first;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+sub csf_port_closed {
+    my ($port) = @_;
+    my $contains = config_key_contains_port( '/etc/csf/csf.conf', 'TCP_IN', $port );
+    return if !defined $contains;
+    return !$contains;
 }
 
 sub _check_for_mysql_users {
