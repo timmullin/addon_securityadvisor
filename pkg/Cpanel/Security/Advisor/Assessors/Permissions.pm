@@ -55,8 +55,8 @@ sub _check_for_unsafe_permissions {
             }
         }
         if ( !$perms_ok ) {
-            my $expected_mode = sprintf( "%04o", $expected_attributes->{'perms'} );
-            my $actual_mode   = sprintf( "%04o", $current_mode & 07777 );
+            my $expected_mode = join( ' ', map { sprintf( '%04o', $_ ) } @{ $expected_attributes->{'perms'} } );
+            my $actual_mode = sprintf( "%04o", $current_mode & 07777 );
             $self->add_warn_advice(
                 'text'       => ["$file has non default permissions.  Expected: $expected_mode, Actual: $actual_mode."],
                 'suggestion' => ["Review the permissions on $file to ensure they are safe"]
