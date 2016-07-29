@@ -50,15 +50,39 @@ sub _suggest_kernelcare {
     my ($self) = @_;
 
     my $environment = Cpanel::OSSys::Env::get_envtype();
+    my $companyid   = _get_companyid();
 
     if ( not -e q{/usr/bin/kcarectl} and not( $environment eq 'virtuozzo' || $environment eq 'lxc' ) ) {
-        $self->add_info_advice(
-            'text' => ['Upgrade to KernelCare'],
-            'suggestion' => [ 'KernelCare provides an easy, effortless way of keeping your operating system kernel up to date without needing to reboot your server.. "[output,url,_1,Upgrade to KernelCare,_2,_3]".', 'https://go.cpanel.net/KernelCare', 'target', '_blank', ],
-        );
+
+        # if cPanel id detected, offer link
+        if ( $companyid eq q{7} ) {
+            $self->add_info_advice(
+                'text' => ['Upgrade to KernelCare'],
+                'suggestion' => [ 'KernelCare provides an easy, effortless way of keeping your operating system kernel up to date without needing to reboot your server. "[output,url,_1,Upgrade to KernelCare,_2,_3]".', 'https://go.cpanel.net/KernelCare', 'target', '_blank', ],
+            );
+        }
+
+        # else, don't offer link
+        else {
+            $self->add_info_advice(
+                'text'       => ['Upgrade to KernelCare'],
+                'suggestion' => [ 'KernelCare provides an easy, effortless way of keeping your operating system kernel up to date without needing to reboot your server. Please consult with your hosting provider for more information.', ],
+            );
+        }
     }
 
     return 1;
+}
+
+# treat cid as a string
+sub _get_companyid {
+    my $companyfile = q{/var/cpanel/companyid};
+    my $cid         = q{};
+    if ( open my $fh, "<", $companyfile ) {
+        $cid = <$fh>;
+        close $fh;
+    }
+    return $cid;
 }
 
 sub _check_for_kernel_version {
