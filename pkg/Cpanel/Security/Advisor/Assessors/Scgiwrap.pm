@@ -37,6 +37,11 @@ sub generate_advice {
     return 1;
 }
 
+sub _binary_has_setuid {
+    my ($binary) = @_;
+    return ( ( stat $binary )[2] || 0 ) & 04000;
+}
+
 sub _check_scgiwrap {
     my ($self) = @_;
 
@@ -47,7 +52,7 @@ sub _check_scgiwrap {
     my $suexec = "/usr/local/apache/bin/suexec";
 
     #check for sticky bit on file to see if it is enabled or not.
-    my $suenabled = ( ( stat $suexec )[2] || 0 ) & 04000;
+    my $suenabled = _binary_has_setuid($suexec);
 
     if ( defined &Cpanel::Config::Httpd::is_ea4 ) {
         if ( Cpanel::Config::Httpd::is_ea4() ) {
@@ -60,6 +65,9 @@ sub _check_scgiwrap {
                 # patches welcome for more a robust way to do this besides matching getcap output!
                 my $gc = `getcap $suexec`;    # the RPM in ea4 uses capabilities for setuid, not setuid bit
                 $suenabled = $gc =~ m/cap_setgid/ && $gc =~ m/cap_setuid/;
+
+                # CloudLinux's EA 4 RPM uses setuid.
+                $suenabled ||= _binary_has_setuid($suexec);
             }
         }
     }
