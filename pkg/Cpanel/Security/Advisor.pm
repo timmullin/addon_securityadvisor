@@ -71,6 +71,13 @@ our $ADVISE_INFO = 2;
 our $ADVISE_WARN = 4;
 our $ADVISE_BAD  = 8;
 
+our $ADVISE_TYPES_LOOKUP = {
+    1 => q{ADVISE_GOOD},
+    2 => q{ADVISE_INFO},
+    4 => q{ADVISE_WARN},
+    8 => q{ADVISE_BAD},
+};
+
 =head1 ADVISE TYPES
 
 =head2 ADVISE_GOOD
