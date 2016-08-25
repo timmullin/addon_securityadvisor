@@ -84,6 +84,7 @@ sub _check_scgiwrap {
     if ( $suenabled && !$scgienabled ) {
         $security_advisor_obj->add_advice(
             {
+                'key'  => 'Scgiwrap_SCGI_is_disabled',
                 'type' => $Cpanel::Security::Advisor::ADVISE_GOOD,
                 'text' => ['SCGI is disabled, currently using the recommended suEXEC.'],
             }
@@ -93,6 +94,7 @@ sub _check_scgiwrap {
         if ( !$ruid ) {
             $security_advisor_obj->add_advice(
                 {
+                    'key'        => 'Scgiwrap_SCGI_AND_suEXEC_are_enabled',
                     'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
                     'text'       => ['Both SCGI and suEXEC are enabled.'],
                     'suggestion' => [
@@ -107,6 +109,7 @@ sub _check_scgiwrap {
         else {
             $security_advisor_obj->add_advice(
                 {
+                    'key'  => 'Scgiwrap_SCGI_suEXEC_and_mod_ruid2_are_enabled',
                     'type' => $Cpanel::Security::Advisor::ADVISE_GOOD,
                     'text' => ['SCGI, suEXEC, and mod_ruid2 are enabled.'],
                 }
@@ -117,6 +120,7 @@ sub _check_scgiwrap {
         if ( !$ruid ) {
             $security_advisor_obj->add_advice(
                 {
+                    'key'        => 'Scgiwrap_suEXEC_is_disabled',
                     'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
                     'text'       => ['suEXEC is disabled.'],
                     'suggestion' => [
@@ -131,6 +135,7 @@ sub _check_scgiwrap {
         else {
             $security_advisor_obj->add_advice(
                 {
+                    'key'  => 'Scgiwrap_suEXEC_is_disabled_mod_ruid2_is_installed',
                     'type' => $Cpanel::Security::Advisor::ADVISE_GOOD,
                     'text' => ['suEXEC is disabled; however mod_ruid2 is installed.'],
                 }
@@ -140,6 +145,7 @@ sub _check_scgiwrap {
     else {
         $security_advisor_obj->add_advice(
             {
+                'key'        => 'Scgiwrap_SCGI_is_enabled',
                 'type'       => $Cpanel::Security::Advisor::ADVISE_BAD,
                 'text'       => ['SCGI is enabled.'],
                 'suggestion' => [

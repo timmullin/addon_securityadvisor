@@ -61,14 +61,21 @@ sub _check_for_kernel_version {
     my $environment           = Cpanel::OSSys::Env::get_envtype();
 
     if ( $running_kernelversion =~ m/\.(?:noarch|x86_64|i.86).+$/ ) {
-        $self->add_info_advice( 'text' => [ 'Custom kernel version cannot be checked to see if it is up to date: [_1]', $running_kernelversion ] );
+        $self->add_info_advice(
+            'key' => 'Kernel_can_not_check',
+            'text' => [ 'Custom kernel version cannot be checked to see if it is up to date: [_1]', $running_kernelversion ]
+        );
     }
     elsif ( ( $environment eq 'virtuozzo' ) || ( $environment eq 'lxc' ) ) {
-        $self->add_info_advice( 'text' => ['Kernel updates are not supported on this virtualization platform. Be sure to keep the host’s kernel up to date.'] );
+        $self->add_info_advice(
+            'key'  => 'Kernel_unsupported_environment',
+            'text' => ['Kernel updates are not supported on this virtualization platform. Be sure to keep the host’s kernel up to date.']
+        );
     }
     elsif ( (@kernel_update) && ($kc_kernelversion) ) {
         if ( kcare_kernel_version("check") eq "New version available" ) {
             $self->add_bad_advice(
+                'key'  => 'Kernel_kernelcare_update_available',
                 'text' => [
                     'Kernel patched with KernelCare, but out of date. running kernel: [_1], most recent kernel: [list_and,_2]',
                     $kc_kernelversion,
@@ -79,6 +86,7 @@ sub _check_for_kernel_version {
         }
         else {
             $self->add_info_advice(
+                'key'  => 'Kernel_waiting_for_kernelcare_update',
                 'text' => [
                     'Kernel patched with KernelCare, but awaiting further updates. running kernel: [_1], most recent kernel: [list_and,_2]',
                     $kc_kernelversion,
@@ -90,6 +98,7 @@ sub _check_for_kernel_version {
     }
     elsif ( (@kernel_update) ) {
         $self->add_bad_advice(
+            'key'  => 'Kernel_outdated',
             'text' => [
                 'Current kernel version is out of date. running kernel: [_1], most recent kernel: [list_and,_2]',
                 $running_kernelversion,
@@ -99,10 +108,11 @@ sub _check_for_kernel_version {
         );
     }
     elsif ($kc_kernelversion) {
-        $self->add_good_advice( 'text' => [ 'KernelCare is installed and current running kernel version is up to date: [_1]', $kc_kernelversion ] );
+        $self->add_good_advice( 'key' => 'Kernel_kernelcare_is_current', 'text' => [ 'KernelCare is installed and current running kernel version is up to date: [_1]', $kc_kernelversion ] );
     }
     elsif ( ( $running_kernelversion ne $boot_kernelversion ) ) {
         $self->add_bad_advice(
+            'key'  => 'Kernel_boot_running_mismatch',
             'text' => [
                 'Current kernel version does not match the kernel version for boot. running kernel: [_1], boot kernel: [_2]',
                 $running_kernelversion,
@@ -118,7 +128,10 @@ sub _check_for_kernel_version {
         );
     }
     else {
-        $self->add_good_advice( 'text' => [ 'Current running kernel version is up to date: [_1]', $running_kernelversion ] );
+        $self->add_good_advice(
+            'key' => 'Kernel_running_is_current',
+            'text' => [ 'Current running kernel version is up to date: [_1]', $running_kernelversion ]
+        );
     }
 
     return 1;
