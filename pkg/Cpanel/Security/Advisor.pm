@@ -59,7 +59,7 @@ Cpanel::Security::Advisor - cPanel Security Advisor
 
 use strict;
 
-our $VERSION = 1.03;
+our $VERSION = 1.04;
 
 use Cpanel::Config::LoadCpConf ();
 use Cpanel::Logger             ();
@@ -71,12 +71,29 @@ our $ADVISE_INFO = 2;
 our $ADVISE_WARN = 4;
 our $ADVISE_BAD  = 8;
 
-our $ADVISE_TYPES_LOOKUP = {
-    1 => q{ADVISE_GOOD},
-    2 => q{ADVISE_INFO},
-    4 => q{ADVISE_WARN},
-    8 => q{ADVISE_BAD},
-};
+# provides string type given integer value
+sub _lookup_advise_type {
+    my $int                 = shift;
+    my $ADVISE_TYPES_LOOKUP = {
+        $ADVISE_GOOD => q{ADVISE_GOOD},
+        $ADVISE_INFO => q{ADVISE_INFO},
+        $ADVISE_WARN => q{ADVISE_WARN},
+        $ADVISE_BAD  => q{ADVISE_BAD},
+    };
+    return ( $int and $ADVISE_TYPES_LOOKUP->{$int} ) ? $ADVISE_TYPES_LOOKUP->{$int} : undef;
+}
+
+# provides integer value given type string
+sub _lookup_advise_type_by_value {
+    my $type                 = shift;
+    my $ADVISE_VALUES_LOOKUP = {
+        q{ADVISE_GOOD} => $ADVISE_GOOD,
+        q{ADVISE_INFO} => $ADVISE_INFO,
+        q{ADVISE_WARN} => $ADVISE_WARN,
+        q{ADVISE_BAD}  => $ADVISE_BAD,
+    };
+    return ( $type and $ADVISE_VALUES_LOOKUP->{$type} ) ? $ADVISE_VALUES_LOOKUP->{$type} : undef;
+}
 
 =head1 ADVISE TYPES
 
